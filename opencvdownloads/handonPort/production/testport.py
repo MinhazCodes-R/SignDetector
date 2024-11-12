@@ -20,7 +20,7 @@ mp_hands = mp.solutions.hands
 sfilepath = "/Users/minhazrakin/Desktop/CodeProjects/Hackathons/Github/Hackathon York/opencvdownloads/handonPort/64stringimg.txt"
 sfile = open(sfilepath,'r')
 
-save_folder = '/Volumes/MinhazHardD/handdetect'
+save_folder = '/Users/minhazrakin/Desktop/CodeProjects/Hackathons/Github/Hackathon York/opencvdownloads/handonPort/cropped_hands'
 os.makedirs(save_folder, exist_ok=True)
 
 def readimage(s64in):
@@ -33,6 +33,45 @@ def readimage(s64in):
     # image_data = cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
     return image_data
 
+def convert_image_to_base64(image):
+    _, buffer = cv2.imencode('.png', image)
+    base64_str = base64.b64encode(buffer).decode('utf-8')
+    base64_image = f"data:image/png;base64,{base64_str}"
+    return base64_image
+
+def remove_background(image):
+    return image
+    # """Use edge detection to isolate the hand and convert the background to black."""
+    # # Convert the image to grayscale
+    # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # # Apply Gaussian Blur to reduce noise and improve edge detection
+    # blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+
+    # # Use Canny edge detection to detect edges in the image
+    # edges = cv2.Canny(blurred, 50, 150)
+
+    # # Find contours based on the edges
+    # contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # # Filter out the largest contour, assuming it's the hand
+    # if contours:
+    #     largest_contour = max(contours, key=cv2.contourArea)
+
+    #     # Create a mask for the largest contour
+    #     hand_mask = np.zeros_like(gray)
+    #     cv2.drawContours(hand_mask, [largest_contour], -1, 255, thickness=cv2.FILLED)
+
+    #     # Apply the mask to the original image
+    #     filtered_image = cv2.bitwise_and(image, image, mask=hand_mask)
+
+    #     # Set non-hand areas to black
+    #     filtered_image[hand_mask == 0] = [0, 0, 0]
+
+    #     return filtered_image
+    # else:
+    #     print("No hand detected.")
+    #     return image
 
 
 def breakdownimg(image_in,counter):
@@ -81,18 +120,27 @@ def breakdownimg(image_in,counter):
 
                 cv2.rectangle(image, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
 
+            # cropped_hand = image[y_min:y_max, x_min:x_max]
 
-            cropped_hand = image[y_min:y_max, x_min:x_max]
-            file_name = os.path.join(save_folder, f'cropped_hand_test{counter}.jpg')
-            counter+=1
-            cv2.imwrite(file_name, cropped_hand)
+            # cropped_hand = remove_background(cropped_hand)
+
+
+
+            # file_name = os.path.join(save_folder, f'cropped_hand_test{counter}.jpg')
+            # counter+=1
+            # cv2.imwrite(file_name, cropped_hand)
+
+        image = cv2.flip(image, 1)
+
+        retstring = convert_image_to_base64(image)
+        return (retstring)
 
 
 
 
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000"])  # Allow only your frontend's origin
+CORS(app, origins=["http://localhost:3000"])
 
 
 counter = 0
@@ -102,18 +150,15 @@ def process_frame():
     global counter
     data = request.json
 
-
-
     # Decode the image from Base64
     image_data = data["image"].split(",")
-
-
     imgrec = readimage(str(image_data[1]))
-    breakdownimg(imgrec,counter)
+    base64ret = breakdownimg(imgrec,counter)
     counter+=1
 
     
-    return jsonify({"status": "frame processed successfully"})
+    return jsonify({"status": "frame processed successfully",
+                    "image":base64ret})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3001)

@@ -20,7 +20,7 @@ mp_hands = mp.solutions.hands
 sfilepath = "/Users/minhazrakin/Desktop/CodeProjects/Hackathons/Github/Hackathon York/opencvdownloads/handonPort/64stringimg.txt"
 sfile = open(sfilepath,'r')
 
-save_folder = '/Users/minhazrakin/Desktop/CodeProjects/Hackathons/Github/Hackathon York/opencvdownloads/handonPort/cropped_hands'
+save_folder = '/Volumes/MinhazHardD/handdetect'
 os.makedirs(save_folder, exist_ok=True)
 
 def readimage(s64in):
@@ -93,13 +93,15 @@ def breakdownimg(image_in,counter):
         x_min = y_min = float('inf')
         x_max = y_max = 0
         cropped_hand = 0
+        
+        image[:] = 255
 
         
         if results.multi_hand_landmarks:
             for num, hand in enumerate(results.multi_hand_landmarks):
                 mp_drawing.draw_landmarks(image, hand, mp_hands.HAND_CONNECTIONS, 
-                                        mp_drawing.DrawingSpec(color=(121, 22, 76), thickness=3, circle_radius=5),
-                                        mp_drawing.DrawingSpec(color=(250, 44, 250), thickness=3, circle_radius=5),
+                                        mp_drawing.DrawingSpec(color=(139, 185, 34), thickness=1, circle_radius=0),
+                                        mp_drawing.DrawingSpec(color=(18, 243, 17), thickness=2, circle_radius=0),
                                         )
 
             for hand_landmarks in results.multi_hand_landmarks:
@@ -118,17 +120,17 @@ def breakdownimg(image_in,counter):
                 y_min -= 50
                 y_max += 50
 
-                cv2.rectangle(image, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
+                # cv2.rectangle(image, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
 
-            # cropped_hand = image[y_min:y_max, x_min:x_max]
+            cropped_hand = image[y_min:y_max, x_min:x_max]
 
             # cropped_hand = remove_background(cropped_hand)
 
 
 
-            # file_name = os.path.join(save_folder, f'cropped_hand_test{counter}.jpg')
-            # counter+=1
-            # cv2.imwrite(file_name, cropped_hand)
+            file_name = os.path.join(save_folder, f'cropped_hand_test{counter}.jpg')
+            counter+=1
+            cv2.imwrite(file_name, cropped_hand)
 
         image = cv2.flip(image, 1)
 

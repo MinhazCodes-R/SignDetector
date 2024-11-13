@@ -5,7 +5,7 @@ import React, { useRef, useState } from "react";
 
 
 function WebAccess(){
-const streamRef = useRef<MediaStream | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const videoRef2 = useRef<HTMLVideoElement | null>(null);
   
@@ -13,6 +13,8 @@ const streamRef = useRef<MediaStream | null>(null);
 
   let canvasWidth = 10;
   let canvasHeight = 10;
+
+  const [letter,changeletter] = useState("");
 
 
   let sendBoolean = false;
@@ -76,16 +78,18 @@ const streamRef = useRef<MediaStream | null>(null);
     sendBoolean = false;
 
     setTimeout(() => {
-      if (canvasRef.current) {
-        const ctx = canvasRef.current.getContext('2d');
-        ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-      }
       if (streamRef.current) {
         // Stop all video tracks
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
         if (videoRef.current) {
           videoRef.current.srcObject = null;
+        }
+        
+
+        if (canvasRef.current) {
+          const ctx = canvasRef.current.getContext('2d');
+          ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         }
       }
       
@@ -115,6 +119,34 @@ const streamRef = useRef<MediaStream | null>(null);
         }
     }
   }
+
+  let counter = 0;
+  let occurange = new Map();
+  let mostoccur = ["",0];
+  let contained_string = "";
+  function renderprediction(prediction:string){
+
+
+    occurange.has(prediction)?occurange.set(prediction, occurange.get(prediction) + 1):occurange.set(prediction, 1);
+    if (occurange.get(prediction) > mostoccur[1]) {
+      mostoccur = [prediction, occurange.get(prediction)];
+    }
+
+    counter++;
+    if (counter === 60) {
+      console.log("Most occurring prediction in 30 iterations:", mostoccur[0]);
+      if (mostoccur[0] != "UNKNOWN"){
+        contained_string += mostoccur[0];
+        changeletter(contained_string);
+      }
+
+      // Reset counter and occurrence data for the next 30 iterations
+      counter = 0;
+      mostoccur = ["", 0];
+      occurange.clear();
+    }
+
+  }
   
   async function sendToServer(imgData:any) {
     try {
@@ -132,6 +164,8 @@ const streamRef = useRef<MediaStream | null>(null);
 
         const result = await response.json();
         drawOnCanvas(result.image);
+        renderprediction(result.prediction);
+
 
 
 
@@ -154,7 +188,7 @@ async function startSendingToServer(){
 
 
     await captureAndSendFrame();
-    await timerSet(20);
+    await timerSet(30);
     startSendingToServer();
 
   }
@@ -183,6 +217,9 @@ async function startSendingToServer(){
 
                     <canvas className="p-2" ref={canvasRef}></canvas>
 
+                    </div>
+                    <div>
+                      <h1 className="text-9xl m-10 text-white">{letter}</h1>
                     </div>
 
 

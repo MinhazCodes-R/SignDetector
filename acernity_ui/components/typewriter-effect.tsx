@@ -18,6 +18,7 @@ export function TypewriterEffectSmoothDemo() {
     },
     {
       text: "Bacem.",
+      className:"text-yellow-500"
 
     },
   ];
